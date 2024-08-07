@@ -1,6 +1,7 @@
 package com.brunoporfidio.organizable.util;
 
 
-public class CreateRoles {
-    
+public enum Roles {
+    ADMIN,
+    USER
 }

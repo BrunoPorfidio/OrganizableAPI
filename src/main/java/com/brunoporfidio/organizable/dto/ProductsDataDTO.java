@@ -8,7 +8,7 @@ public class ProductsDataDTO {
     
     private Long id;
     private String customerName;
-    private String customerPhone;
+    private Integer customerPhone;
     private String model;
     private String problem;
     private String inputDate;

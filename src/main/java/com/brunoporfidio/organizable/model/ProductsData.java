@@ -16,10 +16,11 @@ public class ProductsData implements Serializable{
 
     @NotNull
     private String customerName;
-    private String customerPhone;
+    private Integer customerPhone;
     private String model;
     private String problem;
     private String inputDate;
+    
     private String outputDate;
     
     @NotNull
