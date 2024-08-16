@@ -1,98 +1,56 @@
 package com.brunoporfidio.organizable.security.jwt;
 
-import com.brunoporfidio.organizable.security.model.MainUser;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.SignatureException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
-import javax.crypto.SecretKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
     
-    private final static Logger logger = LoggerFactory.getLogger(JwtUtil.class);
-            
-    @Value("${jwt.secret}")
-    private String secret;
-    
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = this.secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
-    
-    public String extractUsername(String token){
-        return extractClaims(token, Claims::getSubject);
-    }
-    
-    public Date extractExpiration(String token){
-        return extractClaims(token, Claims::getExpiration);
-    }
-    
-    public <T> T extractClaims(String token, Function<Claims, T> claimResolver){
-        final Claims claims = extractAllClaims(token);
-        return claimResolver.apply(claims);
-    }
-    
-    public Claims extractAllClaims(String token){
-        return Jwts
-                .parser()
-//              .setSigningKey(getSigningKey())
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-    
-    private boolean isTokenExpired(String token){
-        return extractExpiration(token).before(new Date());
-    }
-    
-    private String createToken(Authentication authentication){
-        MainUser mainUser = (MainUser) authentication.getPrincipal();
-        return Jwts.builder().setSubject(mainUser.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 100 *60 *60 *10))
-                .signWith(getSigningKey())
+   private static final String JWT_SECRET_KEY = "TExBVkVfTVVZX1NFQ1JFVEzE3Zmxu7BSGSJx72BSBXM";
+    private static final long JWT_TIME_VALIDITY = 1000 * 60  * 15;
+    private static final long JWT_TIME_REFRESH_VALIDATE = 1000 * 60  * 60 * 24;
+
+    public String generateToken(UserDetails userDetails, String role) {
+        var claims = new HashMap<String, Object>();
+        claims.put("role", role);
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_TIME_VALIDITY))
+                .signWith(SignatureAlgorithm.HS256, JWT_SECRET_KEY)
                 .compact();
     }
-    
-    
-//    public Boolean validateToken(String token, UserDetails userDetails){
-//        final String username = extractUsername(token);
-//        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-//    }
-    
-    public boolean validateToken(String token){
-        try{
-            Jwts.parser().setSigningKey(secret).build().parseSignedClaims(token);
-            return true;
-        }catch (MalformedJwtException e){
-            logger.error("Token mal formado");
-        }catch (UnsupportedJwtException e){
-            logger.error("Token no soportado");
-        }catch (ExpiredJwtException e){
-            logger.error("Token expirado");
-        }catch (IllegalArgumentException e){
-            logger.error("Token vacio");
-        }catch (SignatureException e){
-            logger.error("Firma no válida");
-        }
-        return false;
+
+    public String generateRefreshToken(UserDetails userDetails, String role) {
+        var claims = new HashMap<String, Object>();
+        claims.put("role", role);
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_TIME_REFRESH_VALIDATE))
+                .signWith(SignatureAlgorithm.HS256, JWT_SECRET_KEY)
+                .compact();
+    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+        return extractClaim(token, Claims::getSubject).equals(userDetails.getUsername())
+                && !extractClaim(token, Claims::getExpiration).before(new Date());
+    }
+
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        Claims claims = Jwts.parser().setSigningKey(JWT_SECRET_KEY).build().parseClaimsJws(token).getBody();
+        return claimsResolver.apply(claims);
+    }
+
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 }
