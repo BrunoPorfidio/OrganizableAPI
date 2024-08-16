@@ -1,5 +1,8 @@
 package com.brunoporfidio.organizable.dto;
 
+import jakarta.persistence.ElementCollection;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Data;
 
 
@@ -7,13 +10,8 @@ import lombok.Data;
 public class ProductsDataDTO {
     
     private Long id;
-    private String customerName;
-    private Integer customerPhone;
-    private String model;
-    private String problem;
-    private String inputDate;
-    private String outputDate;
-    private String description;
-    private String productImage;
+    @ElementCollection
+    private Map<String, String> customAttributes = new HashMap<>();
+   
     
 }

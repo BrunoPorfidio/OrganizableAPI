@@ -1,34 +1,38 @@
 package com.brunoporfidio.organizable.model;
 
-import java.io.Serializable;
+import com.brunoporfidio.organizable.security.model.UserS;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Data;
 
 @Data
 @Entity
-public class ProductsData implements Serializable{
+@Table(name = "products_data")
+public class ProductsData{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @NotNull
-    private String customerName;
-    private Integer customerPhone;
-    private String model;
-    private String problem;
-    private String inputDate;
+    @JsonIgnore
+    @Column(name = "custom_attributes", columnDefinition = "JSON")
+    private String customAttributesJson;
+
+    @ElementCollection
+    @MapKeyColumn(name = "attribute_name")
+    @Column(name = "attribute_value")
+    @CollectionTable(name = "products_data_custom_attributes", joinColumns = @JoinColumn(name = "product_id"))
+    private Map<String, String> customAttributes = new HashMap<>();
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserS user;
     
-    private String outputDate;
-    
-    @NotNull
-    @Size(min=50,max=2000)
-    private String description;
-    
-    @NotNull
-    @Column(name = "productImage", columnDefinition="LONGTEXT")
-    private String productImage;
+    public void addCustomAttribute(String key, String value) {
+        this.customAttributes.put(key, value);
+    }
     
 }

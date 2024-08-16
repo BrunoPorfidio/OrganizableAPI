@@ -2,7 +2,10 @@ package com.brunoporfidio.organizable.service;
 
 import com.brunoporfidio.organizable.model.ProductsData;
 import com.brunoporfidio.organizable.repository.ProductDataRepository;
+import com.brunoporfidio.organizable.security.model.UserS;
+import com.brunoporfidio.organizable.security.repository.IUserRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,14 +15,44 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ProductsDataService {
     
-    private final ProductDataRepository productDataRepository;
+    @Autowired
+    private ProductDataRepository productDataRepository;
     
     @Autowired
-    public ProductsDataService( ProductDataRepository productDataRepository){
-        this.productDataRepository = productDataRepository;
+    private IUserRepository userRepository;
+
+    public ProductsData addProductToUser(Long userId, ProductsData productData) {
+        UserS user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        productData.setUser(user);
+        ProductsData savedProduct = productDataRepository.save(productData);
+
+        user.getProducts().add(savedProduct);
+        userRepository.save(user);
+
+        return savedProduct;
     }
     
-    public ProductsData createProductsData(ProductsData productsData){
+    public ProductsData addCustomAttribute(Long productId, Map<String, String> attributes) {
+        ProductsData productsData = productDataRepository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+             productsData.addCustomAttribute(entry.getKey(), entry.getValue());
+        }
+
+        return productDataRepository.save(productsData);
+    }
+    
+    public ProductsData updateCustomAttribute(Long productId, Map<String, String> attributes) {
+        ProductsData productsData = productDataRepository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+             productsData.addCustomAttribute(entry.getKey(), entry.getValue());
+        }
+
         return productDataRepository.save(productsData);
     }
     
@@ -33,10 +66,6 @@ public class ProductsDataService {
     
     public boolean existById(Long id){
         return productDataRepository.existsById(id);
-    }
-    
-    public ProductsData editProductsData(ProductsData productsData){
-        return productDataRepository.save(productsData);
     }
     
     public void deleteProductsData(Long id){
