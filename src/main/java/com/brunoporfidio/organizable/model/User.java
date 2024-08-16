@@ -1,8 +1,9 @@
 package com.brunoporfidio.organizable.model;
 
 import jakarta.persistence.*;
-import java.io.Serializable;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Data;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -18,11 +19,7 @@ public class User{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
-    @NotNull
-    @Column(name = "companyName")
-    private String companyName;
-    
+
     @NotNull
     @Column(name = "userName")
     private String userName;
@@ -32,14 +29,11 @@ public class User{
     private String name;
     
     @NotNull
-    @Column(name = "lastname")
-    private String lastname;
-    
-    @NotNull
     @Column(name = "email")
     private String email;
     
     @Column(name = "password")
     private String password;
     
+    private Set<String> roles = new HashSet<>();
 }

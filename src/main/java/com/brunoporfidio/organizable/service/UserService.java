@@ -2,12 +2,11 @@ package com.brunoporfidio.organizable.service;
 
 import com.brunoporfidio.organizable.model.User;
 import com.brunoporfidio.organizable.repository.UserRepository;
+import com.brunoporfidio.organizable.repository.UserRolRepository;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +20,12 @@ public class UserService{
     private final UserRepository userRepository;
     
     @Autowired
-    public UserService( UserRepository userRepository){
+    private final UserRolRepository userRolRepository;
+    
+    @Autowired
+    public UserService( UserRepository userRepository, UserRolRepository userRolRepository){
         this.userRepository = userRepository;
+        this.userRolRepository = userRolRepository;
     }
     
     @Autowired
@@ -53,15 +56,20 @@ public class UserService{
         return userRepository.findByEmail(email);
     }
     
-    public User existByEmail(String email){
-        return userRepository.findByEmail(email);
+    public boolean existsByEmail(String email){
+        return userRepository.existsByEmail(email);
     }
     
     public User editUser(User user){
         return userRepository.save(user);
     }
     
-    public void deleteUser(Integer id){
+    public void deleteUser(Integer id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+
+        userRolRepository.deleteByUserId(id);
+
         userRepository.deleteById(id);
     }
 
